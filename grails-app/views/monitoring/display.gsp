@@ -16,7 +16,7 @@
 <table id="dataTable">
     <thead>
     <tr>
-        <th>Instance</th>
+        <th>Resource</th>
         <th>Metric</th>
         <th>Current</th>
         <th>Next</th>
@@ -26,7 +26,7 @@
     <tbody>
     <g:each in="${data}" var="record">
         <tr>
-            <td>${record.instance}</td>
+            <td>${record.resource}</td>
             <td>${StringUtils.join(
                     StringUtils.splitByCharacterTypeCamelCase(record.metric),
                     ' '
