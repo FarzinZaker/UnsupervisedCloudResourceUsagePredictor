@@ -9,7 +9,7 @@ dataSource {
     jmxExport = true
 }
 
-elasticsearch.url = 'https://vpc-fcs-mtsvc-cac1-dev-es-rqtpxcvnvahpgdxyktdr4hdkoq.ca-central-1.es.amazonaws.com'
+elasticsearch.url = ''
 
 model {
     path = 'd:/models/f3.model'
