@@ -1,46 +1,27 @@
 package f3
 
 import grails.gorm.transactions.Transactional
-import org.apache.commons.io.FileUtils
-import org.datavec.api.records.reader.RecordReader
 import org.datavec.api.records.reader.SequenceRecordReader
-import org.datavec.api.records.reader.impl.csv.CSVRecordReader
 import org.datavec.api.records.reader.impl.csv.CSVSequenceRecordReader
 import org.datavec.api.split.NumberedFileInputSplit
 import org.deeplearning4j.datasets.datavec.SequenceRecordReaderDataSetIterator
-import org.deeplearning4j.eval.RegressionEvaluation
 import org.deeplearning4j.exception.DL4JInvalidInputException
-import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
-import org.deeplearning4j.nn.conf.layers.GravesLSTM
 import org.deeplearning4j.nn.conf.layers.LSTM
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer
-import org.deeplearning4j.nn.graph.ComputationGraph
-import org.deeplearning4j.nn.conf.graph.rnn.LastTimeStepVertex
-import org.deeplearning4j.nn.conf.layers.OutputLayer
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
-import org.deeplearning4j.optimize.listeners.EvaluativeListener
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.deeplearning4j.util.ModelSerializer
-import org.nd4j.evaluation.classification.Evaluation
 import org.nd4j.linalg.activations.Activation
-import org.nd4j.linalg.api.ndarray.INDArray
 
 //import org.nd4j.linalg.cpu.nativecpu.NDArray
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
-import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
-import org.nd4j.linalg.dataset.api.preprocessor.Normalizer
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
 import org.nd4j.linalg.dataset.api.preprocessor.serializer.NormalizerSerializer
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.learning.config.Nadam
 import org.nd4j.linalg.lossfunctions.LossFunctions
-import org.nd4j.linalg.primitives.Pair
-import org.deeplearning4j.nn.weights.WeightInit
-import org.deeplearning4j.nn.conf.GradientNormalization
 
-import java.nio.charset.Charset
 import java.text.DecimalFormat
 
 @Transactional
@@ -80,7 +61,7 @@ class DLModelService {
         _normalizer = null
     }
 
-    void train() {
+    void retrain() {
 
         dataDir = new File(grailsApplication.config["model.dataFiles"]?.toString())
         featuresDir = new File(dataDir, "features")
@@ -104,10 +85,8 @@ class DLModelService {
         //Normalize the training data
         NormalizerStandardize normalizer = new NormalizerStandardize()
         normalizer.fit(trainData)
-        //Collect training data statistics
         trainData.reset()
 
-        //Use previously collected statistics to normalize on-the-fly. Each DataSet returned by 'trainData' iterator will be normalized
         trainData.setPreProcessor(normalizer)
 
         def nIn = new File(featuresDir, "0.csv").readLines().find().split(',').size()
@@ -115,11 +94,7 @@ class DLModelService {
 
         // ----- Configure the network -----
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-        //.seed(123)    //Random number generator seed for improved repeatability. Optional.
-        //.weightInit(WeightInit.XAVIER)
                 .updater(new Nadam())
-        //.gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)  //Not always required, but helps with this data set
-        //.gradientNormalizationThreshold(0.5)
                 .list()
                 .layer(new LSTM.Builder().activation(Activation.TANH).nIn(nIn).nOut(nOut).build())
                 .layer(new RnnOutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
@@ -135,6 +110,33 @@ class DLModelService {
         saveModel(net)
         saveNormalizer(normalizer)
 
+        def trainedFlag = new File(dataDir, "trained")
+        if (!trainedFlag.exists())
+            trainedFlag.createNewFile()
+
+        println "Model Retrained"
+    }
+
+    void train() {
+        dataDir = new File(grailsApplication.config["model.dataFiles"]?.toString())
+        def nIn = new File(dataDir, "latest.csv").readLines().find().split(',').size()
+        def latestDataAll = new File(dataDir, 'latest.csv').text.trim().split('\n')
+        def latestData = latestDataAll[1].split(',')
+        def values = latestData.collect {
+            it.toDouble()
+        }.toArray() as Double[]
+        def input = Nd4j.create(values)
+        def record = Nd4j.zeros(1, nIn)
+        for (def i = 0; i < input.length(); i++)
+            record.put(0, i, input[i] as double)
+        net.output(record, true)
+
+        saveModel(net)
+
+        def trainedFlag = new File(dataDir, "trained")
+        if (!trainedFlag.exists())
+            trainedFlag.createNewFile()
+
         println "Model Trained"
     }
 
@@ -144,7 +146,7 @@ class DLModelService {
         }
         catch (DL4JInvalidInputException ignored) {
             println ignored.message
-            train()
+            retrain()
             predict()
         }
     }
@@ -168,7 +170,7 @@ class DLModelService {
         def record = Nd4j.zeros(1, nIn)
         for (def i = 0; i < input.length(); i++)
             record.put(0, i, input[i] as double)
-        //net.fit(record, record)
+
         def output = net.rnnTimeStep(record)
         normalizer.revertFeatures(output)
         output = output.toDoubleVector()
