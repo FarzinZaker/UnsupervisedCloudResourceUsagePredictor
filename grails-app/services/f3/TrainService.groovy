@@ -12,8 +12,6 @@ class TrainService {
     def train() {
         try {
             DLModelService.train()
-
-            println "Model Trained"
         } catch (exception) {
             println exception.message
             Thread.sleep(5000)

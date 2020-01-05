@@ -9,6 +9,7 @@ import org.datavec.api.records.reader.impl.csv.CSVSequenceRecordReader
 import org.datavec.api.split.NumberedFileInputSplit
 import org.deeplearning4j.datasets.datavec.SequenceRecordReaderDataSetIterator
 import org.deeplearning4j.eval.RegressionEvaluation
+import org.deeplearning4j.exception.DL4JInvalidInputException
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
@@ -25,7 +26,8 @@ import org.deeplearning4j.util.ModelSerializer
 import org.nd4j.evaluation.classification.Evaluation
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.cpu.nativecpu.NDArray
+
+//import org.nd4j.linalg.cpu.nativecpu.NDArray
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize
 import org.nd4j.linalg.dataset.api.preprocessor.Normalizer
@@ -132,6 +134,19 @@ class DLModelService {
 
         saveModel(net)
         saveNormalizer(normalizer)
+
+        println "Model Trained"
+    }
+
+    List<Map> safePredict() {
+        try {
+            predict()
+        }
+        catch (DL4JInvalidInputException ignored) {
+            println ignored.message
+            train()
+            predict()
+        }
     }
 
     List<Map> predict() {
@@ -182,23 +197,27 @@ class DLModelService {
 
     void addAdditionalMetrics() {
         def metrics = MetricOrder.createCriteria().list { order('id') }.collect { "${it.instance}_${it.name}" }
+        def newMetricAdded = true
         featuresDir.eachFile { file ->
-            def lines = file.readLines()
-            def existingMetrics = (lines.find() ?: '').split(',')
-            def newMetrics = metrics.findAll { !existingMetrics.contains(it) }
-            if (newMetrics.size()) {
-                for (def i = 0; i < lines.size(); i++) {
-                    if (lines[i].trim() != '')
-                        lines[i] += ','
-                    if (i == 0)
-                        lines[i] += newMetrics.join(',')
-                    else
-                        lines[i] += newMetrics.collect { df.format(0) }.join(',')
+            if (newMetricAdded) {
+                def lines = file.readLines()
+                def existingMetrics = (lines.find() ?: '').split(',')
+                def newMetrics = metrics.findAll { !existingMetrics.contains(it) }
+                if (newMetrics.size()) {
+                    for (def i = 0; i < lines.size(); i++) {
+                        if (lines[i].trim() != '')
+                            lines[i] += ','
+                        if (i == 0)
+                            lines[i] += newMetrics.join(',')
+                        else
+                            lines[i] += newMetrics.collect { df.format(0) }.join(',')
 
-                }
-                def metricsCount = lines[0].split(',').size()
-                println metricsCount
-                file.write(lines.collect { it.split(',')[0..(metricsCount - 1)].join(',') }.join('\n'))
+                    }
+                    def metricsCount = lines[0].split(',').size()
+                    println metricsCount
+                    file.write(lines.collect { it.split(',')[0..(metricsCount - 1)].join(',') }.join('\n'))
+                } else
+                    newMetricAdded = false
             }
         }
     }

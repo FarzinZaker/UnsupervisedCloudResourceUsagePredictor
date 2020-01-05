@@ -7,7 +7,7 @@ class APIController {
     def DLModelService
 
     def predict() {
-        def data = DLModelService.predict()
+        def data = DLModelService.safePredict()
         if (params.resource)
             data = data.findAll { it.resource == params.resource?.trim() }
         if (params.metric)

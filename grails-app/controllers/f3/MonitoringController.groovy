@@ -5,6 +5,6 @@ class MonitoringController {
     def DLModelService
 
     def display() {
-        [data: DLModelService.predict()]
+        [data: DLModelService.safePredict()]
     }
 }
