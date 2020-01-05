@@ -2,9 +2,9 @@ package f3
 
 class MonitoringController {
 
-    def DLModelService
+    def predictService
 
     def display() {
-        [data: DLModelService.safePredict()]
+        [data: predictService.safePredict()]
     }
 }

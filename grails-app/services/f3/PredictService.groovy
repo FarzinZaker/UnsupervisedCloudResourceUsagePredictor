@@ -7,8 +7,8 @@ class PredictService {
 
     def DLModelService
 
-    def predictNext(){
-        DLModelService.predictNext(getLatest())
+    def predic(){
+        DLModelService.safePredict()
     }
 
     List<Map> getLatest() {

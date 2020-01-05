@@ -4,10 +4,10 @@ import grails.converters.JSON
 
 class APIController {
 
-    def DLModelService
+    def predictService
 
     def predict() {
-        def data = DLModelService.safePredict()
+        def data = predictService.safePredict()
         if (params.resource)
             data = data.findAll { it.resource == params.resource?.trim() }
         if (params.metric)
