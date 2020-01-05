@@ -7,7 +7,7 @@ class PredictService {
 
     def DLModelService
 
-    def predic(){
+    def predict(){
         DLModelService.safePredict()
     }
 

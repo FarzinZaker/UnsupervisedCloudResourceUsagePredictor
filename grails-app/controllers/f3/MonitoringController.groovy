@@ -5,6 +5,6 @@ class MonitoringController {
     def predictService
 
     def display() {
-        [data: predictService.safePredict()]
+        [data: predictService.predict()]
     }
 }

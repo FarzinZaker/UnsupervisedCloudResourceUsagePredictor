@@ -7,7 +7,7 @@ class APIController {
     def predictService
 
     def predict() {
-        def data = predictService.safePredict()
+        def data = predictService.predict()
         if (params.resource)
             data = data.findAll { it.resource == params.resource?.trim() }
         if (params.metric)

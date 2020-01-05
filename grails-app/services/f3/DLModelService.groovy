@@ -168,6 +168,7 @@ class DLModelService {
         def record = Nd4j.zeros(1, nIn)
         for (def i = 0; i < input.length(); i++)
             record.put(0, i, input[i] as double)
+        //net.fit(record, record)
         def output = net.rnnTimeStep(record)
         normalizer.revertFeatures(output)
         output = output.toDoubleVector()
