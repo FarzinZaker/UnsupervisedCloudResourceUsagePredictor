@@ -3,8 +3,8 @@ dataSource {
     dialect = org.hibernate.dialect.MySQL8Dialect
     dbCreate = 'update'
     url = 'jdbc:mysql://localhost/f3'
-    username = 'root'
-    password = 'Salam123'
+    username = ''
+    password = ''
     pooled = true
     jmxExport = true
 }

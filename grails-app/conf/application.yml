@@ -112,22 +112,3 @@ environments:
     configuration: d:/F3/config.groovy
   production:
     configuration: /etc/forecaster/config.groovy
-#environments:
-#    development:
-#grails:
-#    config:
-#        locations:
-#            - file:///d:/F3/config.groovy
-#            - file:///etc/forecatster/config.groovy
-#        dataSource:
-#            dbCreate: update
-#            url: jdbc:mysql://localhost/f3
-#            username: root
-#            password: Salam123
-#---
-#elasticsearch:
-#    url: https://vpc-fcs-mtsvc-cac1-dev-es-rqtpxcvnvahpgdxyktdr4hdkoq.ca-central-1.es.amazonaws.com
-#model:
-#    path: d:/models/f3.model
-#    normalizer: d:/models/f3.normalizer
-#    dataFiles: d:/models/data/
